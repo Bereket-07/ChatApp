@@ -1,0 +1,65 @@
+{%  load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chatapp</title>
+        <link rel="stylesheet" href="{% static 'style.css' %}">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    </head>
+  <body >
+    <center><h1>Hello , Welcome to my chat site ! {{request.user}}</h1></center>
+    <br>
+    {% if request.user.is_authenticated  %}
+    <center> Logout the chat Page <a href = "{% url 'logout-user' %}">Logout</a></center>
+    {% endif %}
+      <br />
+      <div class="message " id="id1">
+        <div class="message__bubble" id="message__bubble">
+          <!-- Messages will be dynamically inserted here -->
+        </div>
+        <div>
+          <input type="text" id="id_message_send_input" />
+          <button type="submit" id="id_message_send_button">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    <script>
+      const username = "{{request.user}}";
+      console.log(username);
+      const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+      chatSocket.onopen = function (e) {
+        console.log("The connection was setup successfully !");
+      };
+      chatSocket.onclose = function (e) {
+        console.log("Something unexpected happened !");
+      };
+      document.querySelector("#id_message_send_input").focus();
+      document.querySelector("#id_message_send_input").onkeyup = function (e) {
+        if (e.keyCode == 13) {
+          document.querySelector("#id_message_send_button").click();
+        }
+      };
+      document.querySelector("#id_message_send_button").onclick = function (e) {
+        var messageInput = document.querySelector(
+          "#id_message_send_input"
+        ).value;
+        chatSocket.send(JSON.stringify({ message: messageInput, username : "{{request.user.username}}"}));
+      };
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        var div = document.createElement("div");
+      div.classList.add("chat-message");
+      if (data.username === username) {
+        div.classList.add("self");
+      } else {
+        div.classList.add("other");
+      }
+      div.innerHTML = `<strong>${data.username}</strong>: ${data.message}`;
+      document.querySelector("#message__bubble").appendChild(div);
+      document.querySelector("#id_message_send_input").value = "";
+      document.querySelector("#message__bubble").scrollTop = document.querySelector("#message__bubble").scrollHeight;
+    };
+    </script>
+  </body>
+</html>
